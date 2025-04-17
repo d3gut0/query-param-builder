@@ -1,0 +1,30 @@
+{
+  "name": "@deguto/query-param-builder",
+  "version": "1.0.0",
+  "description": "Type-safe decorator &amp; builder to generate dynamic SQL WHERE clauses from annotated TypeScript DTOs.",
+  "main": "dist/index.js",
+"types": "dist/index.d.ts",
+"files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "test": "echo \"No tests defined\" && exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/d3gut0/query-param-builder.git"
+  },
+  "author": "Denisson Silva",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/d3gut0/query-param-builder/issues"
+  },
+  "homepage": "https://github.com/d3gut0/query-param-builder#readme",
+  "devDependencies": {
+    "@types/node": "^22.14.1",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "reflect-metadata": "^0.2.2"
+  }
+}
