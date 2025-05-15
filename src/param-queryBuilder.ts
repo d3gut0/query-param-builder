@@ -1,12 +1,14 @@
 import "reflect-metadata";
 import { QueryParamMetadata } from "./query-param.decorator";
 
-
 type ReplacementValue = string | number | boolean | Date | string[] | null;
 
 interface AliasData {
   conditions: string[];
   replacements: Record<string, ReplacementValue>;
+  selects?: string[];
+  orderBys?: string[];
+  groupBys?: string[];
 }
 
 export class ParametroQueryBuilder {
@@ -15,9 +17,11 @@ export class ParametroQueryBuilder {
   constructor(private input: object) {
     const metadata: QueryParamMetadata[] =
       Reflect.getMetadata("queryParams", Object.getPrototypeOf(input)) || [];
-       
+
     for (const meta of metadata) {
       const value = (this.input as any)[meta.propertyKey];
+
+      const type = meta.type || "where";
 
       if (value == null || value == "") {
         continue;
@@ -28,24 +32,51 @@ export class ParametroQueryBuilder {
       }
 
       if (typeof value === "boolean") {
+        // Se for 'false', pula
         if (value === false) {
           continue;
         }
+        // Se for 'true', segue normal abaixo adicionando a condition
       }
 
       if (!this.isValidValue(value)) {
         continue;
       }
 
+      // Se não existir no aliasMap, cria
       if (!this.aliasMap[meta.alias]) {
         this.aliasMap[meta.alias] = {
           conditions: [],
           replacements: {},
+          selects: [],
+          orderBys: [],
+          groupBys: [],
         };
       }
 
+      // Pula se não for necessário (ex: SELECT ou ORDER BY geralmente não depende de valor)
+      if (type === "select") {
+        this.aliasMap[meta.alias].selects!.push(meta.condition);
+        continue;
+      }
+
+      if (type === "orderBy") {
+        this.aliasMap[meta.alias].orderBys!.push(meta.condition);
+        continue;
+      }
+
+      if (type === "groupBy") {
+        this.aliasMap[meta.alias].orderBys!.push(meta.condition);
+        continue;
+      }
+
+      // Adiciona a condition no array
       this.aliasMap[meta.alias].conditions.push(meta.condition);
 
+      // Adiciona no replacements
+      // Exemplo: paramKey = 'empresa', value = ['01', '03']
+      // this.aliasMap[meta.alias].replacements[meta.paramKey] = value;
+      // Checa se são múltiplos parâmetros (BETWEEN, por exemplo)
       if (
         meta.paramKey.includes(":") &&
         typeof value === "object" &&
@@ -66,6 +97,10 @@ export class ParametroQueryBuilder {
     }
   }
 
+  /**
+   * Retorna as condições para determinado alias em forma de " AND cond1 AND cond2"
+   * Se não tiver nada, retorna string vazia.
+   */
   getConditions(alias: string): string {
     const data = this.aliasMap[alias];
     if (!data || data.conditions.length === 0) {
@@ -74,6 +109,9 @@ export class ParametroQueryBuilder {
     return " WHERE 1=1  AND " + data.conditions.join(" AND ");
   }
 
+  /**
+   * Gera o objeto de replacements consolidado de todos os aliases.
+   */
   getReplacements(): Record<string, ReplacementValue> {
     const result: Record<string, ReplacementValue> = {};
     for (const [alias, aliasData] of Object.entries(this.aliasMap)) {
@@ -82,6 +120,30 @@ export class ParametroQueryBuilder {
     return result;
   }
 
+  getSelect(alias: string): string {
+    const data = this.aliasMap[alias];
+    if (!data || !data.selects || data.selects.length === 0) {
+      return ""; // ou jogue exceção, dependendo do seu uso
+    }
+    return data.selects.join(", ");
+  }
+
+  getOrderBy(alias: string): string {
+    const data = this.aliasMap[alias];
+    if (!data || !data.orderBys || data.orderBys.length === 0) {
+      return "";
+    }
+    return " ORDER BY " + data.orderBys.join(", ");
+  }
+
+  getGroupBy(alias: string): string {
+    const data = this.aliasMap[alias];
+    if (!data || !data.groupBys || data.groupBys.length === 0) {
+      return "GROUP BY";
+    }
+    return " GROUP BY " + data.groupBys.join(", ");
+  }
+  /** Valida se o valor é seguro para ser usado nos replacements */
   private isValidValue(value: any): value is ReplacementValue {
     if (Array.isArray(value)) {
       return value.every(
@@ -100,6 +162,7 @@ export class ParametroQueryBuilder {
     return false;
   }
 
+  /** Checagem básica contra valores suspeitos de SQL Injection */
   private isSafeString(str: string): boolean {
     const unsafePatterns = [
       /;/,

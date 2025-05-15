@@ -32,6 +32,12 @@ export class AnalisePrevisaoInput {
   @QueryParam(`a.cod_campo1 IN (:campo1)`, 'campo1', 'contexto2')
   campo1?: string[];
 
+  @QueryParam(`a.DATA_PRODUCAO as DATA_PRODUCAO,`, 'trazer_ordens', 'interno', 'select')
+  @QueryParam(`a.DATA_PRODUCAO,`, 'trazer_ordens', 'interno', 'groupBy')
+  @QueryParam(`DATA_PRODUCAO,`, 'trazer_ordens', 'principal', 'groupBy')
+  @QueryParam(`ORDER BY data_producao`, 'trazer_ordens', 'principal', 'orderBy')
+  trazer_ordens: boolean;
+
   @QueryParam(`TRUNC(C.data) >= TO_DATE(:dataInicial, 'YYYY-MM-DD')`, 'dataInicial', 'contexto2')
   dataInicial?: string;
 
@@ -56,6 +62,15 @@ const builder = new ParametroQueryBuilder(input);
 const whereClause = builder.getConditions('contexto2');
 // Obtém objeto de replacements para passar ao Sequelize, TypeORM, etc.
 const replacements = builder.getReplacements('contexto2');
+// Obtém string com propriedades para select para o alias 'contexto2'
+const propertiesSelect = builder.getSelect('contexto2');
+// Obtém string com propriedades para Group by para o alias 'contexto2'
+const propertiesGroupBy = builder.getReplacements('contexto2');
+// Obtém string com propriedades para Order by para o alias 'contexto2'
+const propertiesOrderBy = builder.getOrderBy('contexto2');
+
+
+
 
 ```
 

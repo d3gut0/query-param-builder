@@ -5,9 +5,13 @@ export interface QueryParamMetadata {
     condition: string;
     paramKey: string;
     alias: string;
+    type?: 'where' | 'select' | 'orderBy' | 'groupBy';
 }
 
-export function QueryParam(condition: string, paramKey: string, alias: string) {
+export function QueryParam(  condition: string,
+    paramKey: string,
+    alias: string,
+    type?: 'where' | 'select' | 'orderBy' | 'groupBy') {
     return function (target: any, propertyKey: string) {        
         const existingParams: QueryParamMetadata[] = Reflect.getMetadata('queryParams', target) || [];
         
@@ -15,7 +19,8 @@ export function QueryParam(condition: string, paramKey: string, alias: string) {
             propertyKey,
             condition,
             paramKey,
-            alias
+            alias,
+            type
         });
         
         Reflect.defineMetadata('queryParams', existingParams, target);

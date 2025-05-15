@@ -1,6 +1,6 @@
 {
   "name": "@deguto/query-param-builder",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Type-safe decorator &amp; builder to generate dynamic SQL WHERE clauses from annotated TypeScript DTOs.",
   "main": "dist/index.js",
 "types": "dist/index.d.ts",
